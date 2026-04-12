@@ -1,12 +1,229 @@
 ﻿<Window x:Class="EKTAtestTask.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:EKTAtestTask"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        xmlns:vm="clr-namespace:EKTAtestTask.ViewModels"
+        xmlns:conv="clr-namespace:EKTAtestTask.Converters"
+        Title="LED Screen Monitor" Height="700" Width="1100"
+        MinHeight="500" MinWidth="800">
 
-    </Grid>
+    <Window.DataContext>
+        <vm:ScreenViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <conv:TemperatureToColorConverter x:Key="TempToColor" />
+
+        <!-- Стиль для поля вводу з валідацією -->
+        <Style x:Key="ValidatedTextBox" TargetType="TextBox">
+            <Setter Property="Width" Value="60"/>
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="BorderBrush" Value="Red"/>
+                    <Setter Property="ToolTip"
+                            Value="{Binding (Validation.Errors)/ErrorContent,
+                                   RelativeSource={RelativeSource Self}}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Шаблон модуля -->
+        <DataTemplate x:Key="ModuleTemplate" DataType="{x:Type vm:ModuleViewModel}">
+            <Border Margin="1" CornerRadius="2" Cursor="Hand"
+                    Background="{Binding Temperature, Converter={StaticResource TempToColor}}"
+                    ToolTip="{Binding TooltipText}">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick"
+                                  Command="{Binding DataContext.SelectModuleCommand,
+                                            RelativeSource={RelativeSource AncestorType=Window}}"
+                                  CommandParameter="{Binding}"/>
+                </Border.InputBindings>
+                <TextBlock Text="{Binding Temperature, StringFormat={}{0:F0}°}"
+                           FontSize="9" HorizontalAlignment="Center"
+                           VerticalAlignment="Center" Foreground="White"
+                           FontWeight="SemiBold"/>
+            </Border>
+        </DataTemplate>
+
+        <!-- Шаблон кабінету -->
+        <DataTemplate x:Key="CabinetTemplate" DataType="{x:Type vm:CabinetViewModel}">
+            <Border BorderBrush="#555" BorderThickness="1" Margin="2"
+                    Width="{Binding DataContext.CabinetPixelWidth,
+                            RelativeSource={RelativeSource AncestorType=Window}}"
+                    Height="{Binding DataContext.CabinetPixelHeight,
+                             RelativeSource={RelativeSource AncestorType=Window}}">
+                <ItemsControl ItemsSource="{Binding Modules}"
+                              ItemTemplate="{StaticResource ModuleTemplate}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="{Binding DataContext.ModulesX,
+                                                   RelativeSource={RelativeSource AncestorType=Window}}"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- ── Верхня панель параметрів ── -->
+        <Border DockPanel.Dock="Top" Background="#1e1e2e" Padding="12,8">
+            <WrapPanel VerticalAlignment="Center">
+
+                <TextBlock Text="Кабінети X:" Foreground="White" VerticalAlignment="Center"/>
+                <TextBox Style="{StaticResource ValidatedTextBox}"
+                         Text="{Binding CabinetsX, UpdateSourceTrigger=PropertyChanged,
+                                ValidatesOnNotifyDataErrors=True}"/>
+
+                <TextBlock Text="Y:" Foreground="White" VerticalAlignment="Center"/>
+                <TextBox Style="{StaticResource ValidatedTextBox}"
+                         Text="{Binding CabinetsY, UpdateSourceTrigger=PropertyChanged,
+                                ValidatesOnNotifyDataErrors=True}"/>
+
+                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="8,0"/>
+
+                <TextBlock Text="Розмір (px) W:" Foreground="White" VerticalAlignment="Center"/>
+                <TextBox Style="{StaticResource ValidatedTextBox}"
+                         Text="{Binding CabinetPixelWidth, UpdateSourceTrigger=PropertyChanged,
+                                ValidatesOnNotifyDataErrors=True}"/>
+
+                <TextBlock Text="H:" Foreground="White" VerticalAlignment="Center"/>
+                <TextBox Style="{StaticResource ValidatedTextBox}"
+                         Text="{Binding CabinetPixelHeight, UpdateSourceTrigger=PropertyChanged,
+                                ValidatesOnNotifyDataErrors=True}"/>
+
+                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="8,0"/>
+
+                <TextBlock Text="Модулі X:" Foreground="White" VerticalAlignment="Center"/>
+                <TextBox Style="{StaticResource ValidatedTextBox}"
+                         Text="{Binding ModulesX, UpdateSourceTrigger=PropertyChanged,
+                                ValidatesOnNotifyDataErrors=True}"/>
+
+                <TextBlock Text="Y:" Foreground="White" VerticalAlignment="Center"/>
+                <TextBox Style="{StaticResource ValidatedTextBox}"
+                         Text="{Binding ModulesY, UpdateSourceTrigger=PropertyChanged,
+                                ValidatesOnNotifyDataErrors=True}"/>
+
+                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="8,0"/>
+
+                <Button Content="▶ Побудувати" Margin="4,0"
+                        Padding="10,4"
+                        Command="{Binding BuildScreenCommand}"
+                        Background="#7c3aed" Foreground="White"
+                        BorderThickness="0"/>
+
+                <Button Margin="4,0" Padding="10,4"
+                        Command="{Binding ToggleTimerCommand}"
+                        Background="#0891b2" Foreground="White"
+                        BorderThickness="0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Content" Value=" Старт таймера"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsTimerRunning}" Value="True">
+                                    <Setter Property="Content" Value="⏹ Стоп таймера"/>
+                                    <Setter Property="Background" Value="#dc2626"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </WrapPanel>
+        </Border>
+
+        <!-- ── Статусний рядок ── -->
+        <Border DockPanel.Dock="Bottom" Background="#111827" Padding="12,4">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="#9ca3af" FontSize="12"/>
+        </Border>
+
+        <!-- ── Права панель деталей ── -->
+        <Border DockPanel.Dock="Right" Width="220" Background="#0f172a" Padding="14">
+            <StackPanel>
+                <TextBlock Text="Деталі модуля" Foreground="#94a3b8"
+                           FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                <StackPanel Visibility="{Binding SelectedModule,
+                                         Converter={x:Static conv:NullToVisibilityConverter.Instance}}">
+                    <!-- Кольоровий індикатор -->
+                    <Border Height="40" CornerRadius="4" Margin="0,0,0,10"
+                            Background="{Binding SelectedModule.Temperature,
+                                         Converter={StaticResource TempToColor}}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Foreground="White" FontSize="12"
+                                   Text="{Binding SelectedModule.Model.DisplayId}"/>
+                        <TextBlock Foreground="White" FontSize="12"
+                                   Text="{Binding SelectedModule.ModuleResolution}"/>
+                    </StackPanel>
+                    
+                    <Separator Margin="0,8"/>
+                    <TextBlock Foreground="#fbbf24" FontSize="22" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Text="{Binding SelectedModule.Temperature,
+                                      StringFormat={}{0:F1} °C}"/>
+
+                    <!-- Легенда -->
+                    <Border Margin="0,16,0,0" Background="#1e293b"
+                            CornerRadius="4" Padding="8">
+                        <StackPanel>
+                            <TextBlock Text="Легенда:" Foreground="#94a3b8"
+                                       FontSize="11" Margin="0,0,0,4"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Border Width="14" Height="14" CornerRadius="2" Margin="0,0,6,0"
+                                        Background="#4682e6"/>
+                                <TextBlock Text="&lt; 30 °C  — холодно" Foreground="#cbd5e1" FontSize="11"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Border Width="14" Height="14" CornerRadius="2" Margin="0,0,6,0"
+                                        Background="#3cc864"/>
+                                <TextBlock Text="30–55 °C — норма" Foreground="#cbd5e1" FontSize="11"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Border Width="14" Height="14" CornerRadius="2" Margin="0,0,6,0"
+                                        Background="#ffb428"/>
+                                <TextBlock Text="55–75 °C — тепло" Foreground="#cbd5e1" FontSize="11"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Border Width="14" Height="14" CornerRadius="2" Margin="0,0,6,0"
+                                        Background="#dc3232"/>
+                                <TextBlock Text="&gt; 75 °C  — гаряче" Foreground="#cbd5e1" FontSize="11"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Foreground="#475569" FontSize="12" TextWrapping="Wrap"
+                           Text="Клікніть на модуль для перегляду деталей.">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedModule}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Головний скролюючий екран ── -->
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto"
+                      Background="#0a0a0f">
+            <ItemsControl ItemsSource="{Binding Cabinets}"
+                          ItemTemplate="{StaticResource CabinetTemplate}"
+                          Margin="8">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"
+                                   ItemWidth="{Binding CabinetPixelWidth}"
+                                   ItemHeight="{Binding CabinetPixelHeight}"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
 </Window>
