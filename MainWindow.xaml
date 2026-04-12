@@ -150,9 +150,13 @@
                     <Border Height="40" CornerRadius="4" Margin="0,0,0,10"
                             Background="{Binding SelectedModule.Temperature,
                                          Converter={StaticResource TempToColor}}"/>
-
-                    <TextBlock Foreground="White" FontSize="12" TextWrapping="Wrap"
-                               Text="{Binding SelectedModule.Model.DisplayId}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Foreground="White" FontSize="12"
+                                   Text="{Binding SelectedModule.Model.DisplayId}"/>
+                        <TextBlock Foreground="White" FontSize="12"
+                                   Text="{Binding SelectedModule.ModuleResolution}"/>
+                    </StackPanel>
+                    
                     <Separator Margin="0,8"/>
                     <TextBlock Foreground="#fbbf24" FontSize="22" FontWeight="Bold"
                                HorizontalAlignment="Center"
@@ -206,7 +210,7 @@
         </Border>
 
         <!-- ── Головний скролюючий екран ── -->
-        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto"
                       Background="#0a0a0f">
             <ItemsControl ItemsSource="{Binding Cabinets}"

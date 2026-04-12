@@ -116,7 +116,7 @@ public partial class ScreenViewModel : BaseViewModel
                     var cab = new CabinetViewModel(new CabinetModel
                     {
                         Row = row, Col = col, Modules = modules
-                    });
+                    }, config);
                     cabinets.Add(cab);
                     _allModules.AddRange(cab.Modules);
                 }
